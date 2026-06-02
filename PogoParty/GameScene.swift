@@ -60,11 +60,20 @@ class GameScene: SKScene {
         player.run(repeatForever, withKey: "textureLoop")
     }
     
-    private func jumpAnimation() {
+    private func otherAnimation(tileNum: Int) {
         player.removeAction(forKey: "textureLoop")
         var playerAnimation = [SKTexture]()
-        for i in 10..<20 {
-            let name = "jump0\(i)"
+        
+        for i in 0..<9 {
+            let name: String
+            let frameNum = tileNum + i
+            
+            switch frameNum {
+            case (10...99):
+                name = "tile0\(frameNum)"
+            default:
+                name = "tile\(frameNum)"
+            }
             playerAnimation.append(textureAtlas.textureNamed(name))
         }
         let animation = SKAction.animate(with: playerAnimation, timePerFrame: 0.15)
@@ -77,16 +86,17 @@ class GameScene: SKScene {
             let location = touch.location(in: self)
             let distance = hypot(player.position.x - location.x, player.position.y - location.y)
             let duration = distance / moveSpeed
-            move(to: location, time: duration)
+            
             isJumping = true
-            jumpAnimation()
+            otherAnimation(tileNum: 20)
+            move(to: location, time: duration)
         }
     }
     
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        isJumping = false
-        staticAnimation(tileNum: 0)
-    }
+//    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+//        isJumping = false
+//        staticAnimation(tileNum: 0)
+//    }
     
     private func move(to location: CGPoint, time: CGFloat) {
         player.removeAction(forKey: "movingAction")

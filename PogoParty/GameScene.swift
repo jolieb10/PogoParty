@@ -10,21 +10,18 @@ import SwiftUI
 import SpriteKit
 
 class GameScene: SKScene {
-    let player = SKSpriteNode()
+    private var playerPosition = CGPoint(x: 150, y: 300)
+    var player = SKSpriteNode(imageNamed: "tile000")
     private var isJumping = false
-    var moveSpeed: CGFloat = 300.0
-    
-    let gTextureAtlas = SKTextureAtlas(named: "green_slime_sprites")
-    let bTextureAtlas = SKTextureAtlas(named: "blue_slime_sprites")
-    let rTextureAtlas = SKTextureAtlas(named: "red_slime_sprites")
-    let yTextureAtlas = SKTextureAtlas(named: "yellow_slime_sprites")
+    var moveSpeed: CGFloat = 400.0
+    let textureAtlas = SKTextureAtlas(named: "green_slime_sprites")
     
     override func didMove(to view: SKView) {
         setupScene()
         setupPlayer(c: "green", tileNum: 0)
-        setupPlayer(c: "blue", tileNum: 50)
-        setupPlayer(c: "red", tileNum: 100)
-        setupPlayer(c: "yellow", tileNum: 150)
+//        setupPlayer(c: "blue", tileNum: 50)
+//        setupPlayer(c: "red", tileNum: 100)
+//        setupPlayer(c: "yellow", tileNum: 150)
     }
     
     private func setupScene() {
@@ -33,66 +30,76 @@ class GameScene: SKScene {
     }
     
     private func setupPlayer(c: String, tileNum: Int) {
-        player.position = CGPoint(x: 100 + player.size.width, y: player.size.height + 100)
-        player.setScale(1)
-        staticAnimation(t: gTextureAtlas)
+        player.position = CGPoint(x: 300 + player.size.width, y: player.size.height + 100)
+        player.setScale(4)
+        staticAnimation(tileNum: tileNum)
         addChild(player)
     }
     
-    private func staticAnimation(t: SKTextureAtlas){
+    private func staticAnimation(tileNum: Int){
+        player.removeAction(forKey: "textureLoop")
+        
         var staticAnimation = [SKTexture]()
         for i in 0..<9 {
-            let name = "tile 00\(i)"
-//            let name: String
-//            let frameNum = tileNum + i
-//            
-//            switch frameNum {
-//            case (0...9):
-//                name = "tile00\(frameNum)"
-//            case (10...99):
-//                name = "tile0\(frameNum)"
-//            default:
-//                name = "tile\(frameNum)"
-//            }
-            staticAnimation.append(t.textureNamed(name))
+            let name: String
+            let frameNum = tileNum + i
+            
+            switch frameNum {
+            case (0...9):
+                name = "tile00\(frameNum)"
+            case (10...99):
+                name = "tile0\(frameNum)"
+            default:
+                name = "tile\(frameNum)"
+            }
+            staticAnimation.append(textureAtlas.textureNamed(name))
         }
         
         let animation = SKAction.animate(with: staticAnimation, timePerFrame: 0.12)
         let repeatForever = SKAction.repeatForever(animation)
-        player.run(repeatForever)
+        player.run(repeatForever, withKey: "textureLoop")
     }
     
-    private func jumpAnimation(t: SKTextureAtlas) {
+    private func jumpAnimation() {
+        player.removeAction(forKey: "textureLoop")
         var playerAnimation = [SKTexture]()
         for i in 10..<20 {
             let name = "jump0\(i)"
-            playerAnimation.append(t.textureNamed(name))
+            playerAnimation.append(textureAtlas.textureNamed(name))
         }
         let animation = SKAction.animate(with: playerAnimation, timePerFrame: 0.15)
         let repeatForever = SKAction.repeatForever(animation)
-        player.run(repeatForever)
+        player.run(repeatForever, withKey: "textureLoop")
     }
-    
-//    private func movePlayer(to targetPosition: CGPoint, player: SKSpriteNode) {
-//        let dx = targetPosition.x - player.position.x
-//        let dy = targetPosition.y - player.position.y
-//        let distance = sqrt(dx*dx + dy*dy)
-//        
-//        if distance > 0 {
-//            let swiftX = dx / distance
-//            let swiftY = dy / distance
-//            
-//            player.physicsBody?.velocity = CGVector(dx: swiftX * moveSpeed, dy: swiftY * moveSpeed)
-//        }
-//    }
    
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        isJumping = true
-        jumpAnimation(t: gTextureAtlas)
+        if let touch = touches.first {
+            let location = touch.location(in: self)
+            let distance = hypot(player.position.x - location.x, player.position.y - location.y)
+            let duration = distance / moveSpeed
+            move(to: location, time: duration)
+            isJumping = true
+            jumpAnimation()
+        }
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         isJumping = false
-        staticAnimation(t: gTextureAtlas)
+        staticAnimation(tileNum: 0)
+    }
+    
+    private func move(to location: CGPoint, time: CGFloat) {
+        player.removeAction(forKey: "movingAction")
+        
+        let moveAction = SKAction.move(to: location, duration: time)
+        
+        let doneMoving = SKAction.run { [weak self] in
+            guard let self = self else { return }
+            self.isJumping = false
+            self.staticAnimation(tileNum: 0)
+        }
+        
+        let sequence = SKAction.sequence([moveAction, doneMoving])
+        player.run(sequence, withKey: "movingAction")
     }
 }

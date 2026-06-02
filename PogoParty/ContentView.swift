@@ -22,6 +22,7 @@ struct ContentView: View {
                 SpriteView(scene: gameScene)
                     .ignoresSafeArea()
             }
+
             //LogoScreen()
         }
     }

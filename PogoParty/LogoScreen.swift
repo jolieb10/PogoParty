@@ -28,7 +28,6 @@ struct LogoScreen: View {
                 }
         }
         .padding()
-//        .rotationEffect(.degrees(270))
     }
 }
 
